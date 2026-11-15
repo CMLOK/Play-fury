@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Let's play Fury!</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --surface: #131a2a;
+      --surface-2: #1a243a;
+      --border: #2a3858;
+      --text: #eef2ff;
+      --muted: #94a3b8;
+      --accent: #f97316;
+      --accent-2: #fb923c;
+      --good: #22c55e;
+      --warn: #eab308;
+      --bad: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #162038 0%, var(--bg) 60%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 14px 48px;
+    }
+
+    .app { width: 100%; max-width: 740px; }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand { display: flex; align-items: baseline; gap: 10px; }
+
+    h1 {
+      margin: 0;
+      font-size: 1.7rem;
+      letter-spacing: 0.04em;
+      font-weight: 900;
+      color: var(--accent-2);
+    }
+
+    .tag { font-size: 0.85rem; color: var(--muted); }
+
+    .hud-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .progress-bar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .seg {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      transition: background 0.2s ease;
+    }
+
+    .seg.done { background: var(--good); border-color: var(--good); }
+    .seg.active { background: var(--accent); border-color: var(--accent); }
+
+    .prompt-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .prompt-title {
+      margin: 0 0 18px;
+      font-size: 1.5rem;
+      line-height: 1.3;
+    }
+
+    .phase-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .phase-label { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.03em; }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--accent-2);
+    }
+
+    .timer.urgent { color: var(--bad); }
+
+    .read-box {
+      padding: 18px;
+      border-radius: 12px;
+      background: rgba(249, 115, 22, 0.08);
+      border: 1px dashed var(--accent);
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1.05rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    button {
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: var(--accent);
+      color: #0b0f19;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover:not(:disabled) { background: var(--accent-2); }
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    button.secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) { background: #243250; }
+
+    .feedback {
+      min-height: 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ok { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+
+    .hits-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+    .hit-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+
+    .tier-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .tier-mythic { background: rgba(234, 179, 8, 0.22); color: #fde047; }
+    .tier-rare { background: rgba(168, 85, 247, 0.22); color: #d8b4fe; }
+    .tier-uncommon { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+    .tier-common { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin: 16px 0 20px;
+    }
+
+    .stat-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .stat-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    .stat-val { font-size: 1.35rem; font-weight: 800; }
+
+    .q-summary-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .q-summary-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .answer-bank-box {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .bank-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .bank-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .bank-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .bank-chip.matched {
+      border-color: var(--good);
+      color: var(--text);
+      background: rgba(34, 197, 94, 0.14);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 155px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin-top: 10px;
+      resize: vertical;
+    }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+
+    .shake { animation: shake 0.25s ease-in-out; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    footer {
+      margin-top: 22px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .owner-line {
+      font-weight: 600;
+      color: var(--text);
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Let's play Fury!</h1>
+        <span class="tag">Type with fury</span>
+      </div>
+      <div class="hud-top">
+        <span class="pill" id="datePill">Date</span>
+        <span class="pill" id="scorePill">Score: 0</span>
+      </div>
+    </header>
+
+    <main class="card" id="appRoot"></main>
+
+    <footer>
+      <div class="owner-line">Concept by CMLOK2026</div>
+    </footer>
+  </div>
+
+  <script>
+    const READ_SECONDS = 5;
+    const BLITZ_SECONDS = 30;
+    const QUESTIONS_PER_DAY = 7;
+
+    const STORAGE_KEYS = {
+      dayOffset: "fury_day_offset_v5",
+      usedPromptIds: "fury_used_prompts_v5",
+      usedQuestionSigs: "fury_used_sigs_v5",
+      runsByDate: "fury_runs_v5",
+      freqByDate: "fury_freq_v5",
+      customPrompts: "fury_custom_prompts_v5"
+    };
+
+    function cleanTopicNoun(rawNoun) {
+      let s = String(rawNoun || "");
+      s = s.replace(/\s*\([^)]*\)/g, "");
+      s = s.replace(/\s*[—–-]\s*(?:must-knows|gems|classics|classic picks|top picks|memorables|favorites|essentials|highlights|standouts)\b.*$/i, "");
+      return s.replace(/\s+/g, " ").trim();
+    }
+
+    const PROMPT_VARIATIONS_10 = [
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`,
+      (noun) => `List ${cleanTopicNoun(noun)}`
+    ];
+
+    function decodeHtmlEntities(str) {
+      const txt = document.createElement("textarea");
+      txt.innerHTML = String(str || "");
+      return txt.value.replace(/\u00ad/g, "");
+    }
+
+    function normalizeText(str) {
+      return decodeHtmlEntities(String(str || ""))
+        .toLowerCase()
+        .replace(/[áàâäãåā]/g, "a")
+        .replace(/[éèêëē]/g, "e")
+        .replace(/[íìîïī]/g, "i")
+        .replace(/[óòôöõøō]/g, "o")
+        .replace(/[úùûüū]/g, "u")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function questionSignature(qText) {
+      return normalizeText(qText);
+    }
+
+    function baseTopicKey(prompt) {
+      const q = normalizeText(prompt && prompt.question ? prompt.question : "");
+      return q.replace(/^list\s+/, "").trim();
+    }
+
+    function isBritishOrUk(text) {
+      const hay = normalizeText(text || "");
+      if (!hay) return false;
+      const blocked = [
+        "british", "britain", "united kingdom", "england", "english",
+        "scotland", "scottish", "wales", "welsh", "london", "uk",
+        "briton", "britons", "cymru", "thames", "westminster", "royal family"
+      ];
+      const words = new Set(hay.split(" "));
+      for (const term of blocked) {
+        if (term.includes(" ")) {
+          if (hay.includes(term)) return true;
+        } else if (words.has(term)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function makeGradedAnswers(items, baseOffset = 0) {
+      const answers = {};
+      const cleanItems = [...new Set(
+        items
+          .map(x => normalizeText(x))
+          .filter(x => x && x.length >= 2 && !isBritishOrUk(x))
+      )];
+      const n = cleanItems.length;
+      cleanItems.forEach((item, idx) => {
+        const ratio = n > 1 ? idx / (n - 1) : 0.5;
+        const rawPts = 15 + ratio * 46 + (baseOffset % 5) - 2;
+        answers[item] = Math.min(65, Math.max(15, Math.round(rawPts)));
+      });
+      return answers;
+    }
+
+    function build500IrelandPools() {
+      const clarePlaces = ["ennis", "cliffs of moher", "lahinch", "doolin", "bunratty", "kilkee", "miltown malbay", "scattery island", "the burren", "loop head", "quin abbey", "lisdoonvarna"];
+      const ieSeeds = [
+        ["Counties", "counties of Ireland", ["dublin", "cork", "galway", "kerry", "limerick", "waterford", "mayo", "donegal", "tipperary", "wexford", "wicklow", "kildare", "meath", "kilkenny", "sligo", "clare", "louth", "tyrone", "derry", "down", "antrim", "armagh", "fermanagh", "cavan", "monaghan", "westmeath", "laois", "offaly", "roscommon", "carlow", "leitrim", "longford"]],
+        ["Provinces", "provinces of Ireland", ["leinster", "munster", "connacht", "ulster"]],
+        ["Cities", "cities in Ireland", ["dublin", "belfast", "cork", "limerick", "galway", "waterford", "derry", "armagh", "lisburn", "newry"]],
+        ["Towns", "Irish towns", ["killarney", "kilkenny", "sligo", "dingle", "westport", "ennis", "tralee", "drogheda", "dundalk", "athlone", "bray", "wexford", "kinsale", "letterkenny", "mullingar", "navan", "clonmel", "carlow", "maynooth", "naas", "tullamore", "arklow", "clifden", "bantry", "buncrana", "thurles", "nenagh", "cashel", "birr", "monasterevin"]],
+        ["Islands", "Irish islands", ["achill island", "aran islands", "inishmore", "inisheer", "inishmaan", "valentia island", "skellig michael", "clare island", "rathlin island", "saltee islands", "cape clear", "bere island", "dursey island", "heir island", "inishbofin", "omney island", "torr island", "blasket islands"]],
+        ["Rivers", "rivers in Ireland", ["shannon", "liffey", "boyne", "lee", "barrow", "nore", "suir", "blackwater", "slaney", "foyle", "bann", "erri", "corrib", "moy", "laune", "feale", "maigue", "dearg", "inny", "brosna"]],
+        ["Lough & Lakes", "Irish loughs or lakes", ["lough neagh", "lough corrib", "lough derg", "lough mask", "lough erne", "lough allen", "lough ree", "lough gill", "lough key", "lough sheelin", "lough arrow", "lough foyle", "lough swilly", "lough leane", "lough dan"]],
+        ["Mountains", "Irish mountains or peaks", ["carrauntoohil", "croagh patrick", "slieve donard", "errigal", "mount brandon", "lugnaquilla", "nepin", "muelrea", "twelve bens", "galtee more", "slieve league", "torc mountain", "djouce", "knockmealdown", "slieve bloom"]],
+        ["Castles", "castles in Ireland", ["dublin castle", "bunratty castle", "kilkenny castle", "trim castle", "blarney castle", "cahir castle", "king john s castle", "ashford castle", "malahide castle", "birr castle", "ross castle", "leap castle", "carrickfergus castle", "dunluce castle", "doe castle"]],
+        ["Gaeilge Colours", "colours in Irish (Gaeilge)", ["dearg", "gorm", "glas", "dubh", "ban", "bui", "uaine", "donn", "corcra", "orainiste", "liath", "bandearg", "oir", "airgead"]],
+        ["Gaeilge Animals", "animals in Irish (Gaeilge)", ["madra", "cat", "bo", "capall", "caora", "muc", "cearc", "luch", "asal", "lacha", "sionnach", "coinin", "tarbh", "eala", "ron", "broc", "bradan", "iolar", "giorria", "fia"]],
+        ["Gaeilge Weather", "weather words in Irish (Gaeilge)", ["baisteach", "fuar", "te", "grian", "gaoth", "sneachta", "fuacht", "grianmhar", "gaofar", "ceo", "scamall", "sioc", "scamallach", "la brea", "toirneach", "tintreach", "cith", "stoirmean"]],
+        ["Gaeilge Numbers", "numbers in Irish (Gaeilge)", ["haon", "do", "tri", "ceathair", "cuig", "se", "seacht", "ocht", "naoi", "deich", "fiche", "aon deag", "do dheag", "tri deag", "ceathair deag", "cuig deag", "se deag", "seacht deag", "ocht deag", "naoi deag", "triochad", "daichead", "caoga", "seasca", "seachto", "ochto", "nocha", "cead"]],
+        ["Gaeilge Days & Time", "Irish (Gaeilge) words for days, seasons, or time", ["luan", "mairt", "ceadaoin", "deardaoin", "aoine", "satharn", "domhnach", "earrach", "samhradh", "fomhar", "geimhreadh", "inniu", "amarach", "inne", "maidin", "trathnona", "oiche", "uair", "bliain", "mi"]],
+        ["Gaeilge Family", "Irish (Gaeilge) words for family or people", ["mathair", "athair", "dearthair", "deirfiur", "cara", "bean", "fear", "paiste", "buachaille", "cailin", "seanathair", "seanmhathair", "mac", "inion", "col ceathrar", "muintir", "gaolta", "duine"]],
+        ["Gaeilge Body", "Irish (Gaeilge) words for body parts", ["ceann", "lamh", "cos", "suil", "cluas", "sron", "beal", "croi", "gruaig", "fiacail", "muineal", "gualainn", "meor", "glun", "droim", "bolg", "teanga", "mala"]],
+        ["Gaeilge Nature", "Irish (Gaeilge) words for nature or landscape", ["farraige", "sliabh", "abhainn", "loch", "coill", "crann", "blath", "fear", "carraig", "tra", "oilean", "speir", "realt", "gealach", "grian", "talamh", "bogach", "gleann"]],
+        ["Gaeilge Phrases", "Irish (Gaeilge) greetings or phrases", ["dia duit", "dia s muire dhuit", "slan", "go raibh maith agat", "failte", "conas ata tu", "maidin mhaith", "oiche mhaith", "le do thoil", "ta bron orm", "tapadh leat", "la maith agat", "slainte", "cad e an sceal", "fadhb ar bith"]],
+        ["GAA Sports", "GAA sports", ["hurling", "gaelic football", "camogie", "handball", "rounders"]],
+        ["Trad Instruments", "traditional Irish instruments", ["bodhran", "tin whistle", "fiddle", "uilleann pipes", "harp", "accordion", "concertina", "banjo", "bouzouki", "bones", "spoon"]],
+        ["Irish Myths", "figures or creatures from Irish mythology", ["cu chulainn", "oisin", "fionn mac cumhaill", "grainne", "deirdre", "maeve", "brigid", "dagda", "lugh", "morrigan", "balor", "nuada", "aengus", "manannan", "banshee", "leprechaun", "pooka", "selkie"]],
+        ["Irish Writers", "famous Irish writers or poets", ["oscar wilde", "w b yeats", "james joyce", "samuel beckett", "seamus heaney", "jonathan swift", "bram stoker", "maeve binchy", "rod doyle", "sally rooney", "edna o brien", "john boyne", "paul muldoon", "anne enright", "flann o brien"]],
+        ["Irish Musicians", "Irish bands, singers, or musicians", ["u2", "the cranberries", "thin lizzy", "sinead o connor", "van morrison", "hothouse flowers", "the dubliners", "planxty", "chieftains", "dermot kennedy", "fontaines d c", "hozier", "rory gallagher", "phil lynott", "luke kelly", "christy moore"]],
+        ["Irish Food & Drink", "Irish foods or drinks", ["irish stew", "soda bread", "boxty", "colcannon", "black pudding", "white pudding", "rashers", "tayto", "guinness", "irish coffee", "whiskey", "baileys", "cider", "barmbrack", "brown bread", "spiced beef", "crubeens", "champ", "porter", "poitin"]],
+        ["Dublin", "places, landmarks, or areas in County Dublin", ["howth", "dalkey", "dun laoghaire", "phoenix park", "temple bar", "grafton street", "malahide", "sandymount", "clontarf", "tallaght", "swords", "skerries", "croke park", "aviva stadium", "st stephens green", "trinity college", "dublin bay", "bull island", "glasnevin"]],
+        ["Cork", "places, landmarks, or towns in County Cork", ["cork city", "cobh", "kinsale", "blarney", "skibbereen", "bantry", "clonakilty", "midleton", "mallow", "fermoy", "youghal", "bandon", "schull", "baltimore", "garnish island", "fota", "english market", "charles fort", "old head of kinsale"]],
+        ["Galway", "places, landmarks, or towns in County Galway", ["galway city", "clifden", "connemara", "salthill", "tuam", "ballinasloe", "athenry", "gort", "spiddal", "roundstone", "kylemore abbey", "inishbofin", "inishmore", "eyre square", "spanish arch", "lough corrib", "twelve bens"]],
+        ["Kerry", "places, landmarks, or towns in County Kerry", ["killarney", "dingle", "tralee", "kenmare", "cahersiveen", "sneem", "waterville", "valentia island", "skellig michael", "ring of kerry", "slea head", "gap of dunloe", "muckross house", "torc waterfall", "inch beach", "ballybunion", "castleisland"]],
+        ["Mayo", "places, landmarks, or towns in County Mayo", ["westport", "castlebar", "ballina", "achill island", "croagh patrick", "clare island", "cong", "louisburgh", "belmullet", "swinford", "charlestown", "keem bay", "clew bay", "ceide fields", "ashford castle"]],
+        ["Donegal", "places, landmarks, or towns in County Donegal", ["letterkenny", "donegal town", "buncrana", "bundoran", "slieve league", "errigal", "glenveagh", "malin head", "ardara", "dungloe", "falcarragh", "ballyshannon", "raphoe", "killybegs", "fanad head", "rossnowlagh"]],
+        ["Clare", "places or landmarks in County Clare", clarePlaces],
+        ["Wicklow", "places, landmarks, or towns in County Wicklow", ["glendalough", "bray", "greystones", "arklow", "wicklow town", "powerscourt", "blessington", "avoca", "lugnaquilla", "roundwood", "laragh", "wicklow mountains"]],
+        ["Kilkenny", "places, landmarks, or towns in County Kilkenny", ["kilkenny city", "thomastown", "callan", "graiguenamanagh", "castlecomer", "ballyragget", "jerpoint abbey", "dunmore cave", "kilkenny castle", "st canices cathedral"]],
+        ["Meath", "places, landmarks, or towns in County Meath", ["newgrange", "knowth", "dowth", "hill of tara", "trim", "navan", "kells", "slane", "oldcastle", "athboy", "boyne valley", "bective abbey"]],
+        ["Waterford", "places, landmarks, or towns in County Waterford", ["waterford city", "dungarvan", "tram ore", "ardmore", "lismore", "dunmore east", "copper coast", "greenway", "reginald s tower", "mount melleray"]],
+        ["Limerick", "places, landmarks, or towns in County Limerick", ["limerick city", "adare", "newcastle west", "rathkeale", "kilmallock", "askeaton", "foynes", "lough gur", "king johns castle", "thomond park"]],
+        ["Tipperary", "places, landmarks, or towns in County Tipperary", ["rock of cashel", "clonmel", "thurles", "nenagh", "tipperary town", "cahir", "ros crea", "holycross abbey", "galtee mountains", "lough derg"]],
+        ["Wexford", "places, landmarks, or towns in County Wexford", ["wexford town", "enniscorthy", "new ross", "gorey", "rosslare", "hook lighthouse", "curracloe", "saltee islands", "johnstown castle", "ferns"]],
+        ["Sligo", "places, landmarks, or towns in County Sligo", ["sligo town", "strandhill", "rosses point", "benbulben", "knocknarea", "carrownaglough", "lough gill", "tubbercurry", "ballymote", "carrowmore"]],
+        ["Ancient Ireland", "ancient Irish monuments & sites", ["newgrange", "knowth", "dowth", "hill of tara", "clonmacnoise", "skellig michael", "glendalough", "brownshill dolmen", "poulnabrone dolmen", "ceide fields", "carrowmore", "navan fort", "dun aengus", "gallarus oratory", "rock of cashel"]],
+        ["Irish Saints", "Irish saints", ["saint patrick", "saint brigid", "saint columba", "saint kevin", "saint ciaran", "saint brendan", "saint laurence o toole", "saint oliver plunkett", "saint ita", "saint enda"]],
+        ["Irish History", "key events or figures in Irish history", ["1916 rising", "war of independence", "great famine", "battle of the boyne", "michael collins", "eamon de valera", "padraig pearse", "james connolly", "daniel o connell", "wolfe tone", "brian boru", "good friday agreement", "easter proclamation"]],
+        ["Irish Dances", "traditional Irish dances", ["reel", "jig", "slip jig", "hornpipe", "set dance", "siege of ennis", "walls of limerick", "fairy reel", "haymakers jig"]],
+        ["Irish Rugby", "Irish rugby players, coaches, or grounds", ["brian o driscoll", "johnny sexton", "paul o connell", "ronan o gara", "aviva stadium", "lansdowne road", "thomond park", "keith wood", "tadhg furlong", "garry ringrose", "bundee aki", "jamison gibson park"]],
+        ["Irish Football", "Irish soccer players, managers, or grounds", ["robbie keane", "roy keane", "liam brady", "paul mcgrath", "jack charlton", "shay given", "damien duff", "seamus coleman", "john o shea", "niall quinn", "aviva stadium", "dalymount park"]],
+        ["Irish Golf & Boxing", "Irish golfers or boxers", ["rory mcilroy", "padraig harrington", "shane lowry", "katie taylor", "barry mcguigan", "steve collins", "kellie harrington", "michael conlan", "paddy barnes"]],
+        ["Irish Cinema & TV", "Irish actors, directors, or films", ["cillian murphy", "colin farrell", "brendan gleeson", "saoirse ronan", "barry keoghan", "paul mescal", "jessica buckley", "martin mcdonagh", "neil jordan", "father ted", "derry girls", "the banshees of inisherin", "in bruges", "once", "sing street"]],
+        ["Irish Comedians", "Irish comedians", ["dylan moran", "ardal o hanlon", "tommy tiernan", "maureen potter", "ed byrne", "des bishop", "joanne mcnally", "aisling bea", "blindboy"]],
+        ["Irish Beaches", "beaches in Ireland", ["inch beach", "keem bay", "curracloe strand", "strandhill", "rossnowlagh", "lahinch beach", "dog s bay", "derrynane beach", "banna strand", "coumeenole beach", "barleycove"]],
+        ["Irish Whiskeys & Drinks", "Irish whiskeys, beers, or drinks", ["jameson", "redbreast", "powers", "bushmills", "midleton", "teeling", "green spot", "guinness", "smithwicks", "murphys", "beamish", "bulmers", "magners", "irish coffee", "baileys"]]
+      ];
+
+      const pools = [];
+      let pIdx = 0;
+      for (const [subcat, noun, items] of ieSeeds) {
+        const cleanedNoun = cleanTopicNoun(noun);
+        for (let v = 0; v < 10; v++) {
+          const rotated = [...items.slice(v % items.length), ...items.slice(0, v % items.length)];
+          const answers = makeGradedAnswers(rotated, pIdx + v);
+          for (let k = 0; k < PROMPT_VARIATIONS_10.length; k++) {
+            pools.push({
+              id: `ie500_p${pIdx}_v${v}_q${k}`,
+              isIrelandOrGaeilge: true,
+              category: `Ireland · ${subcat}`,
+              question: PROMPT_VARIATIONS_10[k](cleanedNoun),
+              answers,
+              aliases: {}
+            });
+          }
+          pIdx += 1;
+        }
+      }
+      return pools;
+    }
+
+    function build500GeneralPools() {
+      const genSeeds = [
+        ["Space", "constellations", ["orion", "ursa major", "ursa minor", "cassiopeia", "leo", "scorpius", "cygnus", "draco", "taurus", "gemini", "virgo", "libra", "aquarius", "pisces", "aries", "capricornus", "pegasus", "andromeda", "lyra", "aquila"]],
+        ["Space", "named stars", ["sirius", "polaris", "vega", "rigel", "betelgeuse", "altair", "aldebaran", "antares", "spica", "deneb", "procyon", "capella", "fomalhaut", "arcturus", "canopus", "regulus", "castor", "pollux", "bellatrix", "achernar"]],
+        ["Space", "planets in our solar system", ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"]],
+        ["Space", "moons in our solar system", ["moon", "titan", "europa", "io", "ganymede", "callisto", "enceladus", "phobos", "deimos", "triton", "charon", "mimas"]],
+        ["Space", "spacecraft or missions", ["apollo 11", "voyager 1", "voyager 2", "sputnik 1", "hubble", "james webb", "cassini", "juno", "curiosity", "perseverance", "artemis 1", "gemini 4", "viking 1", "new horizons", "galileo", "rosetta", "chandrayaan 3", "tiangong", "iss"]],
+        ["Geography", "countries in South America", ["brazil", "argentina", "peru", "chile", "colombia", "venezuela", "ecuador", "bolivia", "uruguay", "paraguay", "guyana", "suriname"]],
+        ["Geography", "countries in Europe", ["france", "germany", "italy", "spain", "ireland", "portugal", "greece", "sweden", "norway", "poland", "finland", "denmark", "belgium", "austria", "switzerland", "netherlands", "croatia", "romania", "hungary", "czechia", "iceland", "ukraine"]],
+        ["Geography", "countries in Asia", ["japan", "china", "india", "south korea", "thailand", "vietnam", "indonesia", "malaysia", "philippines", "pakistan", "nepal", "sri lanka", "cambodia", "mongolia", "turkey", "israel", "saudi arabia", "uae", "qatar", "bangladesh"]],
+        ["Geography", "countries in Africa", ["egypt", "nigeria", "kenya", "south africa", "morocco", "ghana", "ethiopia", "tanzania", "uganda", "algeria", "tunisia", "namibia", "botswana", "rwanda", "senegal", "madagascar", "zambia", "zimbabwe", "cameroon", "ivory coast"]],
+        ["Geography", "world capitals", ["paris", "tokyo", "rome", "madrid", "berlin", "dublin", "ottawa", "canberra", "beijing", "moscow", "cairo", "athens", "lisbon", "amsterdam", "vienna", "brussels", "stockholm", "oslo", "copenhagen", "helsinki", "warsaw", "prague", "budapest", "reykjavik", "seoul", "bangkok", "new delhi", "buenos aires", "lima", "bogota", "santiago", "nairobi", "wellington"]],
+        ["Geography", "world rivers", ["nile", "amazon", "mississippi", "danube", "seine", "rhine", "ganges", "yangtze", "colorado", "rio grande", "yellow", "mekong", "volga", "indus", "congo", "missouri", "ohio", "niger", "zambezi", "loire", "rhone", "elbe", "jordan", "hudson", "murray", "tigris", "euphrates", "yukon", "columbia", "po", "tagus", "ebro", "vistula", "dnieper"]],
+        ["Geography", "deserts", ["sahara", "gobi", "mojave", "atacama", "kalahari", "outback", "sonoran", "arabian", "namib", "thar", "patagonian", "great victoria", "chihuahuan", "taklamakan", "rub al khali", "danakil", "lut", "tabernas"]],
+        ["Geography", "seas or oceans", ["pacific ocean", "atlantic ocean", "indian ocean", "arctic ocean", "southern ocean", "mediterranean sea", "caribbean sea", "red sea", "black sea", "baltic sea", "caspian sea", "coral sea", "tasman sea", "barents sea", "aegean sea", "adriatic sea", "bering sea", "arabian sea"]],
+        ["Geography", "mountain ranges", ["himalayas", "andes", "rocky mountains", "alps", "pyrenees", "carpathians", "appalachians", "ural mountains", "atlas mountains", "caucasus", "dolomites", "drakensberg", "karakoram", "hindu kush", "tien shan", "altai mountains", "zagros", "scandes"]],
+        ["Geography", "islands", ["greenland", "madagascar", "borneo", "sumatra", "honshu", "iceland", "sardinia", "sicily", "crete", "cyprus", "mallorca", "ibiza", "tenerife", "corsica", "hawaii", "fiji", "tahiti", "zanzibar", "galapagos", "sri lanka"]],
+        ["Geography", "volcanoes", ["vesuvius", "etna", "fuji", "kilimanjaro", "krakatoa", "mauna loa", "st helens", "pompeii", "tambora", "pinatubo", "popocatepetl", "cotopaxi", "eyjafjallajokull", "stromboli", "rainier", "kilauea"]],
+        ["Geography", "waterfalls", ["angel falls", "niagara falls", "victoria falls", "iguazu falls", "dettifoss", "sutherland falls", "tugela falls", "kaieteur falls", "gullfoss", "skogarfoss", "seljalandsfoss", "yosemite falls", "rhine falls", "multnomah falls"]],
+        ["Geography", "lakes", ["lake superior", "lake victoria", "lake baikal", "lake tanganyika", "lake malawi", "lake titicaca", "lake michigan", "lake huron", "lake erie", "lake ontario", "dead sea", "crater lake", "lake geneva", "lake como", "loch ness"]],
+        ["Food", "fruits", ["apple", "banana", "orange", "strawberry", "grape", "lemon", "mango", "pineapple", "watermelon", "peach", "pear", "cherry", "kiwi", "lime", "plum", "coconut", "blueberry", "raspberry", "avocado", "blackberry", "pomegranate", "fig", "papaya", "apricot", "guava", "nectarine", "passionfruit", "dragonfruit", "lychee", "persimmon", "starfruit", "quince"]],
+        ["Food", "vegetables", ["potato", "carrot", "onion", "tomato", "broccoli", "spinach", "lettuce", "cucumber", "pepper", "cabbage", "garlic", "peas", "corn", "celery", "mushroom", "cauliflower", "zucchini", "asparagus", "eggplant", "beetroot", "turnip", "kale", "artichoke", "leeks", "parsnip", "radish", "brussels", "okra", "fennel", "rutabaga"]],
+        ["Food", "pasta shapes", ["spaghetti", "penne", "macaroni", "lasagna", "fusilli", "ravioli", "linguine", "fettuccine", "gnocchi", "rigatoni", "tortellini", "farfalle", "tagliatelle", "orzo", "ziti", "bucatini", "manicotti", "cavatappi", "conchiglie", "pappardelle", "orecchiette", "ditalini", "paccheri"]],
+        ["Food", "types of cheese", ["cheddar", "mozzarella", "brie", "camembert", "gouda", "feta", "parmesan", "swiss", "blue cheese", "gruyere", "provolone", "ricotta", "edam", "manchego", "havarti", "mascarpone", "halloumi", "roquefort"]],
+        ["Food", "herbs or spices", ["pepper", "salt", "cinnamon", "garlic", "basil", "oregano", "thyme", "rosemary", "paprika", "cumin", "turmeric", "ginger", "chili", "nutmeg", "clove", "coriander", "cilantro", "parsley", "mint", "dill", "sage", "saffron", "cardamom", "fennel", "star anise", "allspice", "sumac", "fenugreek", "tarragon", "marjoram"]],
+        ["Food", "types of bread", ["sourdough", "baguette", "ciabatta", "focaccia", "naan", "pita", "rye", "brioche", "tortilla", "bagel", "croissant", "cornbread", "flatbread", "soda bread", "pumpernickel"]],
+        ["Food", "types of nuts", ["almond", "walnut", "cashew", "pecan", "pistachio", "hazelnut", "macadamia", "brazil nut", "peanut", "chestnut", "pine nut"]],
+        ["Food", "types of berries", ["strawberry", "blueberry", "raspberry", "blackberry", "cranberry", "gooseberry", "boysenberry", "mulberry", "elderberry", "cloudberry"]],
+        ["Food", "types of citrus fruits", ["orange", "lemon", "lime", "grapefruit", "tangerine", "clementine", "mandarin", "pomelo", "kumquat", "yuzu"]],
+        ["Nature", "birds", ["eagle", "owl", "pigeon", "duck", "penguin", "parrot", "swan", "goose", "crow", "robin", "hawk", "dove", "flamingo", "seagull", "raven", "ostrich", "peacock", "magpie", "sparrow", "hummingbird", "kiwi", "emu", "blackbird", "woodpecker", "pelican", "vulture", "heron", "puffin", "starling", "falcon", "stork", "albatross", "toucan", "crane", "kingfisher", "thrush", "condor"]],
+        ["Nature", "types of trees", ["oak", "pine", "maple", "willow", "birch", "cedar", "redwood", "ash", "fir", "spruce", "beech", "elm", "chestnut", "mahogany", "eucalyptus", "cypress", "sequoia", "baobab", "sycamore", "poplar", "hazel", "juniper", "teak", "alder", "banyan", "yew", "rowan", "hawthorn"]],
+        ["Nature", "types of sharks", ["great white shark", "hammerhead shark", "tiger shark", "whale shark", "bull shark", "mako shark", "lemon shark", "nurse shark", "basking shark", "blue shark", "thresher shark", "blacktip shark", "whitetip shark", "goblin shark", "leopard shark"]],
+        ["Nature", "types of whales or dolphins", ["blue whale", "humpback whale", "orca", "sperm whale", "beluga whale", "narwhal", "fin whale", "minke whale", "right whale", "bottlenose dolphin", "spinner dolphin", "common dolphin", "pilot whale", "porpoise"]],
+        ["Nature", "types of snakes", ["cobra", "python", "viper", "boa constrictor", "anaconda", "rattlesnake", "mamba", "taipan", "adder", "krait", "king cobra", "garter snake", "coral snake", "copperhead", "water moccasin"]],
+        ["Nature", "types of wild cats", ["lion", "tiger", "leopard", "jaguar", "cheetah", "cougar", "lynx", "snow leopard", "ocelot", "caracal", "serval", "bobcat", "clouded leopard", "manul"]],
+        ["Nature", "types of bears", ["grizzly bear", "polar bear", "black bear", "brown bear", "panda", "sun bear", "sloth bear", "spectacled bear", "kodiak bear", "spirit bear"]],
+        ["Nature", "types of flowers", ["rose", "tulip", "daisy", "sunflower", "lily", "orchid", "daffodil", "lavender", "iris", "peony", "poppy", "jasmine", "hibiscus", "marigold", "carnation", "bluebell", "snowdrop", "hydrangea"]],
+        ["Nature", "types of monkeys or apes", ["chimpanzee", "gorilla", "orangutan", "bonobo", "baboon", "capuchin", "macaque", "gibbon", "howler monkey", "lemur"]],
+        ["Nature", "types of owls", ["barn owl", "snowy owl", "great horned owl", "screech owl", "tawny owl", "burrowing owl", "long eared owl", "elf owl"]],
+        ["Animals", "dog breeds", ["labrador", "poodle", "bulldog", "beagle", "boxer", "husky", "dalmatian", "rottweiler", "chihuahua", "pug", "golden retriever", "german shepherd", "dachshund", "collie", "border collie", "greyhound", "whippet", "doberman", "spaniel", "cocker spaniel", "terrier", "jack russell", "mastiff", "great dane", "samoyed", "akita", "shiba inu", "bloodhound", "basset hound", "weimaraner", "vizsla", "saluki", "borzoi", "basenji"]],
+        ["Prehistory", "dinosaurs", ["t rex", "triceratops", "stegosaurus", "velociraptor", "brachiosaurus", "diplodocus", "pterodactyl", "spinosaurus", "ankylosaurus", "allosaurus", "parasaurolophus", "iguanodon", "gallimimus", "carnotaurus", "compsognathus", "giganotosaurus", "pachycephalosaurus", "therizinosaurus", "archaeopteryx", "brontosaurus"]],
+        ["Science", "chemical elements", ["gold", "oxygen", "iron", "hydrogen", "helium", "carbon", "silver", "neon", "copper", "lead", "nitrogen", "aluminum", "mercury", "zinc", "sodium", "calcium", "sulfur", "uranium", "magnesium", "nickel", "potassium", "chlorine", "titanium", "silicon", "tin", "iodine", "argon", "boron", "phosphorus", "cobalt", "lithium", "fluorine", "beryllium", "barium", "xenon", "plutonium", "radium", "bismuth", "cesium", "radon"]],
+        ["Science", "noble gases", ["helium", "neon", "argon", "krypton", "xenon", "radon", "oganesson"]],
+        ["Science", "gemstones", ["diamond", "ruby", "sapphire", "emerald", "amethyst", "topaz", "opal", "jade", "pearl", "turquoise", "garnet", "peridot", "aquamarine", "citrine", "moonstone", "onyx"]],
+        ["Science", "minerals", ["quartz", "calcite", "feldspar", "mica", "gypsum", "talc", "pyrite", "hematite", "magnetite", "galena", "fluorite", "corundum", "apatite", "halite", "malachite"]],
+        ["Science", "letters of the Greek alphabet", ["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega"]],
+        ["Music", "musical instruments", ["guitar", "piano", "drums", "violin", "flute", "trumpet", "saxophone", "cello", "clarinet", "harp", "ukulele", "harmonica", "banjo", "trombone", "accordion", "bagpipes", "fiddle", "tuba", "xylophone", "oboe", "synth", "tin whistle", "mandolin", "sitar", "bassoon", "marimba", "harpsichord", "uilleann pipes"]],
+        ["Music", "woodwind instruments", ["flute", "clarinet", "saxophone", "oboe", "bassoon", "piccolo", "recorder", "bagpipes", "tin whistle"]],
+        ["Music", "string instruments", ["guitar", "violin", "cello", "harp", "ukulele", "banjo", "mandolin", "viola", "double bass", "sitar"]],
+        ["Music", "music genres", ["rock", "pop", "jazz", "blues", "hip hop", "classical", "country", "reggae", "electronic", "punk", "metal", "folk", "soul", "funk", "r and b", "disco", "indie", "gospel", "opera", "bluegrass"]],
+        ["Sports", "sports", ["football", "basketball", "tennis", "golf", "rugby", "cricket", "baseball", "swimming", "boxing", "hockey", "volleyball", "cycling", "skiing", "hurling", "gaelic football", "surfing", "skateboarding", "table tennis", "badminton", "wrestling", "darts", "snooker", "rowing", "athletics", "snowboarding", "squash", "camogie", "archery", "fencing", "judo", "karate", "handball", "triathlon", "curling"]],
+        ["Sports", "ball sports", ["football", "basketball", "tennis", "golf", "rugby", "cricket", "baseball", "volleyball", "table tennis", "badminton", "squash", "handball"]],
+        ["Games", "board games", ["chess", "monopoly", "scrabble", "checkers", "clue", "risk", "battleship", "jenga", "connect four", "backgammon", "snakes and ladders", "catan", "ludo", "operation", "guess who", "go", "mahjong", "taboo", "ticket to ride", "othello", "pandemic", "stratego", "azul", "wingspan", "reversi"]],
+        ["Games", "card games", ["poker", "blackjack", "bridge", "solitaire", "uno", "rummy", "hearts", "spades", "gin rummy", "canasta", "go fish", "crazy eights", "snap", "whist", "baccarat"]],
+        ["Mythology", "mythological gods, goddesses, or creatures", ["zeus", "poseidon", "hades", "athena", "apollo", "ares", "artemis", "hermes", "aphrodite", "hera", "thor", "odin", "loki", "freya", "anubis", "ra", "medusa", "minotaur", "pegasus", "phoenix", "dragon", "unicorn", "centaur", "cyclops", "cerberus", "kraken", "valkyrie", "siren", "banshee", "basilisk", "griffin", "persephone", "dionysus", "hephaestus"]],
+        ["Mythology", "Norse gods and figures", ["odin", "thor", "loki", "freya", "frigg", "baldur", "tyr", "heimdall", "hel", "fenrir", "jormungandr", "valkyrie"]],
+        ["Language", "spoken languages", ["spanish", "french", "german", "italian", "mandarin", "arabic", "russian", "japanese", "portuguese", "korean", "irish", "hindi", "swedish", "norwegian", "danish", "dutch", "greek", "polish", "turkish", "hebrew", "swahili", "tagalog", "vietnamese", "thai", "bengali", "urdu", "persian", "finnish", "hungarian", "czech", "latin", "esperanto", "cantonese", "yiddish", "zulu", "amharic", "basque"]],
+        ["World", "world currencies", ["euro", "dollar", "pound", "yen", "yuan", "peso", "rupee", "franc", "krona", "krone", "ruble", "won", "real", "dirham", "dinar", "zloty", "baht", "shekel", "rand", "lira", "ringgit", "dong", "riyal", "sol", "lev", "forint", "hryvnia", "koruna", "naira", "shilling"]],
+        ["Vehicles", "car manufacturers", ["toyota", "ford", "bmw", "audi", "mercedes", "honda", "ferrari", "porsche", "volkswagen", "nissan", "hyundai", "kia", "mazda", "subaru", "volvo", "lexus", "lamborghini", "tesla", "chevrolet", "jeep", "peugeot", "renault", "fiat", "skoda", "seat", "alfa romeo", "maserati", "bugatti", "rivian", "lucid", "suzuki", "mitsubishi", "bentley", "rolls royce", "gmc", "cadillac"]],
+        ["Literature", "plays by William Shakespeare", ["hamlet", "macbeth", "othello", "romeo and juliet", "king lear", "tempest", "a midsummer night s dream", "julius caesar", "merchant of venice", "much ado about nothing", "twelfth night", "as you like it", "henry v", "richard iii", "antony and cleopatra", "coriolanus", "titus andronicus", "winter s tale", "measure for measure", "all s well that ends well", "cymbeline", "timon of athens"]],
+        ["Arts", "art movements or mediums", ["impressionism", "cubism", "surrealism", "pop art", "baroque", "renaissance", "realism", "abstract", "minimalism", "expressionism", "romanticism", "gothic", "dada", "fauvism", "pointillism", "watercolor", "oil painting", "sculpture", "pottery", "ceramics", "origami", "graffiti", "fresco", "etching", "lithography"]],
+        ["Technology", "programming languages", ["python", "javascript", "java", "c", "c plus plus", "c sharp", "ruby", "go", "rust", "swift", "kotlin", "php", "sql", "html", "css", "typescript", "scala", "perl", "r", "lua"]],
+        ["History", "ancient wonders of the world", ["great pyramid of giza", "hanging gardens of babylon", "temple of artemis", "statue of zeus", "mausoleum at halicarnassus", "colossus of rhodes", "lighthouse of alexandria"]],
+        ["History", "world landmarks", ["eiffel tower", "colosseum", "taj mahal", "statue of liberty", "machu picchu", "great wall of china", "christ the redeemer", "acropolis", "petra", "angkor wat", "sydney opera house", "chichen itza", "alhambra", "sagrada familia"]],
+        ["Math", "geometric shapes", ["triangle", "square", "circle", "rectangle", "pentagon", "hexagon", "octagon", "heptagon", "decagon", "rhombus", "parallelogram", "trapezoid", "oval", "ellipse", "sphere", "cube", "cylinder", "cone", "pyramid"]],
+        ["Time & Calendar", "months of the year", ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]],
+        ["Colors & Light", "colors of the rainbow", ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]]
+      ];
+
+      const pools = [];
+      let pIdx = 0;
+      for (const [cat, noun, items] of genSeeds) {
+        if (isBritishOrUk(cat) || isBritishOrUk(noun)) continue;
+        const cleanedNoun = cleanTopicNoun(noun);
+        for (let v = 0; v < 10; v++) {
+          const rotated = [...items.slice(v % items.length), ...items.slice(0, v % items.length)];
+          const answers = makeGradedAnswers(rotated, pIdx + v);
+          for (let k = 0; k < PROMPT_VARIATIONS_10.length; k++) {
+            pools.push({
+              id: `gen500_p${pIdx}_v${v}_q${k}`,
+              isIrelandOrGaeilge: false,
+              category: cat,
+              question: PROMPT_VARIATIONS_10[k](cleanedNoun),
+              answers,
+              aliases: {}
+            });
+          }
+          pIdx += 1;
+        }
+      }
+      return pools;
+    }
+
+    const POOLS_500_IRELAND = build500IrelandPools();
+    const POOLS_500_GENERAL = build500GeneralPools();
+
+    function getDayOffset() { return Number(localStorage.getItem(STORAGE_KEYS.dayOffset) || "0"); }
+
+    function getEffectiveDateKey() {
+      const now = new Date();
+      const offset = getDayOffset();
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatDisplayDate(dateKey) {
+      const [y, m, d] = dateKey.split("-").map(Number);
+      const dt = new Date(y, m - 1, d);
+      return dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function getJsonStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    }
+
+    function setJsonStorage(key, val) {
+      localStorage.setItem(key, JSON.stringify(val));
+    }
+
+    function getUsedPromptIds() { return getJsonStorage(STORAGE_KEYS.usedPromptIds, []); }
+    function saveUsedPromptIds(arr) { setJsonStorage(STORAGE_KEYS.usedPromptIds, [...new Set(arr)]); }
+    function getUsedQuestionSigs() { return getJsonStorage(STORAGE_KEYS.usedQuestionSigs, []); }
+    function saveUsedQuestionSigs(arr) { setJsonStorage(STORAGE_KEYS.usedQuestionSigs, [...new Set(arr)]); }
+    function getRunsMap() { return getJsonStorage(STORAGE_KEYS.runsByDate, {}); }
+    function saveRunsMap(map) { setJsonStorage(STORAGE_KEYS.runsByDate, map); }
+
+    function bumpFreq(dateKey, promptId, canonicalKey) {
+      try {
+        const all = getJsonStorage(STORAGE_KEYS.freqByDate, {});
+        if (!all[dateKey]) all[dateKey] = {};
+        if (!all[dateKey][promptId]) all[dateKey][promptId] = {};
+        all[dateKey][promptId][canonicalKey] = (all[dateKey][promptId][canonicalKey] || 0) + 1;
+        setJsonStorage(STORAGE_KEYS.freqByDate, all);
+        return all[dateKey][promptId][canonicalKey];
+      } catch { return 1; }
+    }
+
+    function seededShuffle(list, seedStr) {
+      let h = 2166136261;
+      for (let i = 0; i < seedStr.length; i++) {
+        h ^= seedStr.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      const arr = [...list];
+      for (let i = arr.length - 1; i > 0; i--) {
+        h ^= h << 13;
+        h ^= h >>> 17;
+        h ^= h << 5;
+        const j = Math.abs(h) % (i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function rarityTierFromPoints(pts) {
+      if (pts >= 50) return { label: "Mythic", emoji: "🟨", cls: "tier-mythic" };
+      if (pts >= 38) return { label: "Rare", emoji: "🟪", cls: "tier-rare" };
+      if (pts >= 26) return { label: "Uncommon", emoji: "🟦", cls: "tier-uncommon" };
+      return { label: "Common", emoji: "⬜", cls: "tier-common" };
+    }
+
+    function buildDailyPrompts(dateKey) {
+      const runs = getRunsMap();
+      if (runs[dateKey] && Array.isArray(runs[dateKey].prompts) && runs[dateKey].prompts.length === QUESTIONS_PER_DAY) {
+        return runs[dateKey].prompts;
+      }
+
+      let usedIds = getUsedPromptIds();
+      const usedSigs = getUsedQuestionSigs();
+      const usedSigsSet = new Set(usedSigs);
+      const pickedTopics = new Set();
+
+      function pickUniqueTopicPrompts(pool, countNeeded, tag) {
+        let candidates = pool.filter(
+          p => !usedIds.includes(p.id) && !usedSigsSet.has(questionSignature(p.question)) && !isBritishOrUk(p.question)
+        );
+        if (candidates.length < countNeeded) {
+          const poolIds = new Set(pool.map(p => p.id));
+          const remaining = usedIds.filter(id => !poolIds.has(id));
+          saveUsedPromptIds(remaining);
+          usedIds = remaining;
+          candidates = pool.filter(p => !isBritishOrUk(p.question));
+        }
+
+        const shuffled = seededShuffle(candidates, `${dateKey}-${tag}`);
+        const chosen = [];
+        for (const p of shuffled) {
+          const tKey = baseTopicKey(p);
+          if (pickedTopics.has(tKey)) continue;
+          pickedTopics.add(tKey);
+          chosen.push(p);
+          if (chosen.length === countNeeded) break;
+        }
+        if (chosen.length < countNeeded) {
+          for (const p of shuffled) {
+            if (!chosen.includes(p)) chosen.push(p);
+            if (chosen.length === countNeeded) break;
+          }
+        }
+        return chosen;
+      }
+
+      const iePrompt = pickUniqueTopicPrompts(POOLS_500_IRELAND, 1, "ie")[0];
+      const genPrompts = pickUniqueTopicPrompts(POOLS_500_GENERAL, QUESTIONS_PER_DAY - 1, "gen");
+      const combined = [iePrompt, ...genPrompts].slice(0, QUESTIONS_PER_DAY);
+      const ordered = seededShuffle(combined, `${dateKey}-order`);
+
+      saveUsedPromptIds([...usedIds, ...ordered.map(p => p.id)]);
+      saveUsedQuestionSigs([...usedSigs, ...ordered.map(p => questionSignature(p.question)).filter(Boolean)]);
+
+      runs[dateKey] = {
+        dateKey,
+        prompts: ordered,
+        completed: false,
+        results: [],
+        totalScore: 0,
+        bestStreak: 0
+      };
+      saveRunsMap(runs);
+
+      return ordered;
+    }
+
+    function levenshtein1(a, b) {
+      if (a === b) return 0;
+      const m = a.length;
+      const n = b.length;
+      if (Math.abs(m - n) > 1) return 2;
+      let i = 0, j = 0, edits = 0;
+      while (i < m && j < n) {
+        if (a[i] === b[j]) { i++; j++; }
+        else {
+          edits++;
+          if (edits > 1) return 2;
+          if (m > n) i++;
+          else if (n > m) j++;
+          else { i++; j++; }
+        }
+      }
+      if (i < m || j < n) edits++;
+      return edits;
+    }
+
+    function resolveAnswer(prompt, rawInput) {
+      const norm = normalizeText(rawInput);
+      if (!norm) return null;
+
+      if (prompt.aliases && Object.prototype.hasOwnProperty.call(prompt.aliases, norm)) {
+        const target = prompt.aliases[norm];
+        if (Object.prototype.hasOwnProperty.call(prompt.answers, target)) {
+          return { canonical: target, basePoints: prompt.answers[target] };
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(prompt.answers, norm)) {
+        return { canonical: norm, basePoints: prompt.answers[norm] };
+      }
+
+      if (norm.length >= 6) {
+        for (const [key, pts] of Object.entries(prompt.answers)) {
+          if (Math.abs(key.length - norm.length) <= 1 && levenshtein1(key, norm) <= 1) {
+            return { canonical: key, basePoints: pts };
+          }
+        }
+      }
+
+      return null;
+    }
+
+    let state = {
+      dateKey: "",
+      prompts: [],
+      qIndex: 0,
+      phase: "loading",
+      countdown: READ_SECONDS,
+      timerId: null,
+      seenCanonical: new Set(),
+      hits: [],
+      streak: 0,
+      bestStreak: 0,
+      totalScore: 0,
+      questionResults: [],
+      feedback: null
+    };
+
+    function clearTimers() {
+      if (state.timerId) {
+        clearInterval(state.timerId);
+        state.timerId = null;
+      }
+    }
+
+    function initForCurrentDay() {
+      clearTimers();
+      const dateKey = getEffectiveDateKey();
+      const datePill = document.getElementById("datePill");
+      if (datePill) datePill.textContent = formatDisplayDate(dateKey);
+
+      const runs = getRunsMap();
+      const savedRun = runs[dateKey];
+
+      if (savedRun && savedRun.completed) {
+        state = {
+          dateKey,
+          prompts: savedRun.prompts || [],
+          qIndex: QUESTIONS_PER_DAY,
+          phase: "finished",
+          countdown: 0,
+          timerId: null,
+          seenCanonical: new Set(),
+          hits: [],
+          streak: 0,
+          bestStreak: savedRun.bestStreak || 0,
+          totalScore: savedRun.totalScore || 0,
+          questionResults: savedRun.results || [],
+          feedback: null
+        };
+        document.getElementById("scorePill").textContent = `Score: ${state.totalScore}`;
+        render();
+        return;
+      }
+
+      const prompts = buildDailyPrompts(dateKey);
+      state = {
+        dateKey,
+        prompts,
+        qIndex: 0,
+        phase: "idle",
+        countdown: READ_SECONDS,
+        timerId: null,
+        seenCanonical: new Set(),
+        hits: [],
+        streak: 0,
+        bestStreak: 0,
+        totalScore: 0,
+        questionResults: [],
+        feedback: null
+      };
+      document.getElementById("scorePill").textContent = "Score: 0";
+      render();
+    }
+
+    function startQuestionReadPhase(index) {
+      clearTimers();
+      state.qIndex = index;
+      state.phase = "reading";
+      state.countdown = READ_SECONDS;
+      state.seenCanonical = new Set();
+      state.hits = [];
+      state.streak = 0;
+      state.feedback = null;
+      render();
+
+      state.timerId = setInterval(() => {
+        state.countdown -= 1;
+        if (state.countdown <= 0) {
+          clearTimers();
+          startBlitzPhase();
+        } else {
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function startBlitzPhase() {
+      clearTimers();
+      state.phase = "blitz";
+      state.countdown = BLITZ_SECONDS;
+      state.feedback = null;
+      render();
+
+      const input = document.getElementById("answerInput");
+      if (input) input.focus();
+
+      const startTime = Date.now();
+      state.timerId = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const remaining = Math.max(0, BLITZ_SECONDS - elapsed);
+        state.countdown = remaining;
+        updateTimerDisplay();
+        if (remaining <= 0) {
+          clearTimers();
+          finishCurrentQuestion();
+        }
+      }, 100);
+    }
+
+    function updateTimerDisplay() {
+      const el = document.getElementById("timerDisplay");
+      if (!el) return;
+      if (state.phase === "reading") {
+        el.textContent = `${Math.max(1, Math.ceil(state.countdown))}s`;
+        el.classList.remove("urgent");
+      } else if (state.phase === "blitz") {
+        el.textContent = `${state.countdown.toFixed(1)}s`;
+        el.classList.toggle("urgent", state.countdown <= 5);
+      }
+    }
+
+    function handleAnswerSubmit(e) {
+      e.preventDefault();
+      if (state.phase !== "blitz") return;
+
+      const input = document.getElementById("answerInput");
+      const raw = input.value;
+      input.value = "";
+      input.focus();
+
+      const prompt = state.prompts[state.qIndex];
+      const match = resolveAnswer(prompt, raw);
+
+      if (!match) {
+        state.streak = 0;
+        state.feedback = { type: "bad", text: raw.trim() ? `"${raw.trim()}" didn't count` : "Type an answer and hit Enter" };
+        renderBlitzDynamic(true);
+        return;
+      }
+
+      if (state.seenCanonical.has(match.canonical)) {
+        state.streak = 0;
+        state.feedback = { type: "warn", text: `Already entered "${match.canonical}" this round` };
+        renderBlitzDynamic(true);
+        return;
+      }
+
+      state.seenCanonical.add(match.canonical);
+      state.streak += 1;
+      if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+
+      const seenCount = bumpFreq(state.dateKey, prompt.id, match.canonical);
+      const repeatPenalty = seenCount > 1 ? Math.max(0.65, 1 - (seenCount - 1) * 0.1) : 1;
+      const streakBonus = state.streak >= 3 ? (state.streak - 2) * 4 : 0;
+      const earned = Math.round(match.basePoints * repeatPenalty) + streakBonus;
+
+      state.totalScore += earned;
+      document.getElementById("scorePill").textContent = `Score: ${state.totalScore}`;
+
+      const tier = rarityTierFromPoints(match.basePoints);
+      state.hits.unshift({ label: match.canonical, points: earned, tier });
+
+      state.feedback = {
+        type: "ok",
+        text: `+${earned} pts · ${match.canonical} (${tier.label}${state.streak >= 3 ? ` · ${state.streak}x streak` : ""})`
+      };
+
+      renderBlitzDynamic(false);
+    }
+
+    function finishCurrentQuestion() {
+      const prompt = state.prompts[state.qIndex];
+      const qPoints = state.hits.reduce((sum, h) => sum + h.points, 0);
+      const rarest = state.hits.reduce((best, h) => {
+        if (!best) return h.tier;
+        const order = { Common: 1, Uncommon: 2, Rare: 3, Mythic: 4 };
+        return order[h.tier.label] > order[best.label] ? h.tier : best;
+      }, null);
+
+      const allAnswersMostCommonToRarest = Object.entries(prompt.answers || {})
+        .map(([ans, pts]) => ({
+          answer: ans,
+          points: pts,
+          tier: rarityTierFromPoints(pts),
+          matched: state.seenCanonical.has(ans)
+        }))
+        .sort((a, b) => a.points - b.points || a.answer.localeCompare(b.answer));
+
+      const missedAnswers = allAnswersMostCommonToRarest.filter(item => !item.matched);
+
+      state.questionResults.push({
+        id: prompt.id,
+        question: prompt.question,
+        category: prompt.category,
+        count: state.hits.length,
+        points: qPoints,
+        rarestTier: rarest ? rarest.label : "None",
+        rarestEmoji: rarest ? rarest.emoji : "⬜",
+        hits: [...state.hits].reverse(),
+        allAnswers: allAnswersMostCommonToRarest,
+        missedAnswers
+      });
+
+      if (state.qIndex + 1 < QUESTIONS_PER_DAY) {
+        startQuestionReadPhase(state.qIndex + 1);
+      } else {
+        state.phase = "finished";
+        const runs = getRunsMap();
+        runs[state.dateKey] = {
+          dateKey: state.dateKey,
+          prompts: state.prompts,
+          completed: true,
+          results: state.questionResults,
+          totalScore: state.totalScore,
+          bestStreak: state.bestStreak
+        };
+        saveRunsMap(runs);
+        render();
+      }
+    }
+
+    function buildWhatsAppShareText() {
+      const totalHits = state.questionResults.reduce((s, q) => s + q.count, 0);
+      const order = { None: 0, Common: 1, Uncommon: 2, Rare: 3, Mythic: 4 };
+      let topTier = "None";
+      for (const q of state.questionResults) {
+        if (order[q.rarestTier] > order[topTier]) topTier = q.rarestTier;
+      }
+
+      const lines = state.questionResults.map((q, idx) => {
+        const blocks = q.hits.length ? q.hits.map(h => h.tier.emoji).join("") : "—";
+        return `Q${idx + 1}: ${blocks} (${q.count} hits · ${q.points} pts)`;
+      });
+
+      return [
+        `🔥 Let's play Fury! — ${formatDisplayDate(state.dateKey)}`,
+        `Score: ${state.totalScore} | Hits: ${totalHits} | Best Streak: ${state.bestStreak}x | Rarest: ${topTier}`,
+        `Concept by CMLOK2026`,
+        ``,
+        ...lines
+      ].join("\n");
+    }
+
+    function downloadStandaloneHtml() {
+      const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "index.html";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function renderProgressBar() {
+      return `
+        <div class="progress-bar" aria-hidden="true">
+          ${Array.from({ length: QUESTIONS_PER_DAY }, (_, i) => {
+            let cls = "seg";
+            if (state.phase === "finished" || i < state.qIndex) cls += " done";
+            else if (i === state.qIndex) cls += " active";
+            return `<div class="${cls}"></div>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderBlitzDynamic(shouldShake) {
+      const fb = document.getElementById("feedbackBox");
+      const hitsEl = document.getElementById("hitsContainer");
+      const countEl = document.getElementById("hitCountLabel");
+
+      if (fb) {
+        fb.className = `feedback ${state.feedback ? state.feedback.type : ""} ${shouldShake ? "shake" : ""}`;
+        fb.textContent = state.feedback ? state.feedback.text : "";
+      }
+      if (countEl) {
+        countEl.textContent = `${state.hits.length} valid`;
+      }
+      if (hitsEl) {
+        hitsEl.innerHTML = state.hits
+          .map(h => `
+            <span class="hit-chip">
+              <span>${h.label}</span>
+              <span class="tier-badge ${h.tier.cls}">+${h.points}</span>
+            </span>
+          `)
+          .join("");
+      }
+    }
+
+    function render() {
+      const root = document.getElementById("appRoot");
+
+      if (state.phase === "idle") {
+        root.innerHTML = `
+          <div class="progress-bar">
+            ${Array.from({ length: QUESTIONS_PER_DAY }, () => `<div class="seg"></div>`).join("")}
+          </div>
+          <div class="prompt-meta">
+            <span>Daily 7-Question Blitz</span>
+            <span>30s Per Question</span>
+          </div>
+          <h2 class="prompt-title">Ready to type with fury?</h2>
+          <p style="color: var(--muted); margin-top: 0; line-height: 1.55;">
+            Each prompt has <strong>many valid answers</strong> graded from most common to rarest. You have <strong>30 seconds</strong> per question to enter as many answers as you can—rarer answers award <strong>extra points</strong>!
+          </p>
+          <div class="btn-row">
+            <button id="startRunBtn" type="button">Start Blitz</button>
+          </div>
+        `;
+        document.getElementById("startRunBtn").addEventListener("click", () => startQuestionReadPhase(0));
+        return;
+      }
+
+      if (state.phase === "reading") {
+        const prompt = state.prompts[state.qIndex];
+        root.innerHTML = `
+          ${renderProgressBar()}
+          <div class="prompt-meta">
+            <span>Question ${state.qIndex + 1} of ${QUESTIONS_PER_DAY}</span>
+            <span>${prompt.category}</span>
+          </div>
+          <h2 class="prompt-title">${prompt.question}</h2>
+          <div class="phase-banner">
+            <span class="phase-label">READ THE PROMPT</span>
+            <span class="timer" id="timerDisplay">${Math.max(1, Math.ceil(state.countdown))}s</span>
+          </div>
+          <div class="read-box">
+            <strong>30-second blitz starts automatically—type with fury!</strong>
+          </div>
+        `;
+        return;
+      }
+
+      if (state.phase === "blitz") {
+        const prompt = state.prompts[state.qIndex];
+        root.innerHTML = `
+          ${renderProgressBar()}
+          <div class="prompt-meta">
+            <span>Question ${state.qIndex + 1} of ${QUESTIONS_PER_DAY}</span>
+            <span id="hitCountLabel">${state.hits.length} valid</span>
+          </div>
+          <h2 class="prompt-title">${prompt.question}</h2>
+          <div class="phase-banner">
+            <span class="phase-label">TYPE WITH FURY</span>
+            <span class="timer ${state.countdown <= 5 ? "urgent" : ""}" id="timerDisplay">${state.countdown.toFixed(1)}s</span>
+          </div>
+          <form class="input-row" id="answerForm">
+            <input
+              id="answerInput"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Type an answer and press Enter..."
+            />
+            <button type="submit">Send</button>
+          </form>
+          <div class="feedback" id="feedbackBox"></div>
+          <div class="hits-list" id="hitsContainer"></div>
+        `;
+        document.getElementById("answerForm").addEventListener("submit", handleAnswerSubmit);
+        renderBlitzDynamic(false);
+        const inp = document.getElementById("answerInput");
+        if (inp) inp.focus();
+        return;
+      }
+
+      const totalHits = state.questionResults.reduce((s, q) => s + q.count, 0);
+      const shareText = buildWhatsAppShareText();
+
+      root.innerHTML = `
+        ${renderProgressBar()}
+        <div class="prompt-meta">
+          <span>Blitz Complete</span>
+          <span>${formatDisplayDate(state.dateKey)}</span>
+        </div>
+        <h2 class="prompt-title">Summary</h2>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">Total Score</div>
+            <div class="stat-val">${state.totalScore}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Answers Named</div>
+            <div class="stat-val">${totalHits}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Best Streak</div>
+            <div class="stat-val">${state.bestStreak}x</div>
+          </div>
+        </div>
+
+        ${state.questionResults.map((q, idx) => {
+          const bank = Array.isArray(q.allAnswers) ? q.allAnswers : [];
+          const otherAnswers = Array.isArray(q.missedAnswers)
+            ? q.missedAnswers
+            : bank.filter(item => !item.matched);
+          return `
+            <div class="q-summary-item">
+              <div class="q-summary-head">
+                <span>Q${idx + 1}: ${q.question}</span>
+                <span>+${q.points} pts (${q.count})</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--muted);">
+                <strong>Your hits:</strong> ${q.hits.length ? q.hits.map(h => `${h.label} (${h.tier.label} · +${h.points})`).join(" · ") : "No valid answers"}
+              </div>
+              <div class="answer-bank-box">
+                <div class="bank-label">Other answers you could have used (${otherAnswers.length} missed · Most Common → Rarest):</div>
+                <div class="bank-chips">
+                  ${otherAnswers.length ? otherAnswers.map(item => `
+                    <span class="bank-chip">
+                      <span>${item.answer}</span>
+                      <span class="tier-badge ${item.tier.cls}">${item.tier.label} · +${item.points}</span>
+                    </span>
+                  `).join("") : `<span style="font-size: 0.8rem; color: var(--good);">You named every answer in this pool!</span>`}
+                </div>
+              </div>
+              ${bank.length ? `
+                <div class="answer-bank-box">
+                  <div class="bank-label">Full answer key — Most Common → Rarest (${bank.length} graded):</div>
+                  <div class="bank-chips">
+                    ${bank.map(item => `
+                      <span class="bank-chip ${item.matched ? "matched" : ""}">
+                        <span>${item.matched ? "✓ " : ""}${item.answer}</span>
+                        <span class="tier-badge ${item.tier.cls}">${item.tier.label} · +${item.points}</span>
+                      </span>
+                    `).join("")}
+                  </div>
+                </div>
+              ` : ""}
+            </div>
+          `;
+        }).join("")}
+
+        <div style="margin-top: 18px;">
+          <strong>Share to WhatsApp</strong>
+          <textarea id="shareBox" readonly>${shareText}</textarea>
+          <div class="btn-row">
+            <button id="copyShareBtn" type="button">Copy for WhatsApp</button>
+            <button class="secondary" id="downloadHtmlBtn" type="button">Save index.html</button>
+          </div>
+          <div class="feedback ok" id="copyStatus"></div>
+        </div>
+      `;
+
+      document.getElementById("copyShareBtn").addEventListener("click", async () => {
+        const box = document.getElementById("shareBox");
+        const status = document.getElementById("copyStatus");
+        try {
+          await navigator.clipboard.writeText(box.value);
+          status.textContent = "Copied to clipboard! Paste straight into WhatsApp.";
+        } catch {
+          box.select();
+          document.execCommand("copy");
+          status.textContent = "Selected/copied summary for WhatsApp.";
+        }
+      });
+
+      document.getElementById("downloadHtmlBtn").addEventListener("click", downloadStandaloneHtml);
+    }
+
+    try {
+      initForCurrentDay();
+    } catch (err) {
+      const root = document.getElementById("appRoot");
+      if (root) {
+        root.innerHTML = `<h2 class="prompt-title">Let's play Fury!</h2><p style="color: var(--muted);">Unable to load saved state (${err && err.message ? err.message : "storage error"}). Refresh to start fresh.</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
